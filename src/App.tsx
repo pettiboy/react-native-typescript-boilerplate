@@ -3,13 +3,10 @@ import EncryptedStorage from 'react-native-encrypted-storage';
 import React from 'react';
 import {ActivityIndicator} from 'react-native';
 import {POST} from './api/fetch';
-// import NotificationHandler from './components/Notification/NotificationHandler';
 import {COLORS} from './constants';
 import {AuthContext} from './context/Auth';
 import {AuthStack, MainStack} from './navigation/Navigation';
 import {authReducer, authReducerState} from './reducers/auth';
-import NoInternetConnection from './components/NoInternet/NoInternetConnection';
-// import NetInfo, {useNetInfo} from '@react-native-community/netinfo';
 
 const App = () => {
   const [state, updateReducerState] = React.useReducer(
@@ -17,25 +14,28 @@ const App = () => {
     authReducerState,
   );
 
-  // internet handling
-  // const netInfo = useNetInfo();
-
   const authContext = React.useMemo(
     () => ({
       signIn: async (data: {phone: string; otp: string}) => {
         // post phone and otp to server
-        const json = await POST('validate-otp', undefined, {
-          phone: data.phone,
-          otp: data.otp,
-        });
+        // const json = await POST('check-otp', undefined, {
+        //   phone: data.phone,
+        //   otp: data.otp,
+        // });
+        const json = {token: 'someExmapleTokenForReference', user_id: 2};
+
         // if server responds with token then otp was valid
         if (json.token) {
           const userToken = json.token;
           const userId = json.user_id.toString();
 
           // save token in secure storage
-          await EncryptedStorage.setItem('Token', userToken);
-          await EncryptedStorage.setItem('UserId', userId);
+          try {
+            await EncryptedStorage.setItem('AppToken', userToken);
+            await EncryptedStorage.setItem('UserId', userId);
+          } catch (error) {
+            console.log(error);
+          }
 
           updateReducerState({type: 'SIGN_IN', token: userToken});
         } else {
@@ -44,19 +44,29 @@ const App = () => {
       },
       signUp: async (data: {phone: string; otp: string; name: string}) => {
         // post phone, otp and name to server
-        const json = await POST('validate-otp', undefined, {
-          phone: data.phone,
-          otp: data.otp,
-          name: data.name,
-        });
+        // const json = await POST('check-otp', undefined, {
+        //   phone: data.phone,
+        //   otp: data.otp,
+        //   name: data.name,
+        // });
+        const json = {
+          token: 'someExmapleTokenForReference',
+          user_id: 2,
+          error: null,
+        };
+
         // if server responds with token then otp was valid
         if (json.token) {
           const userToken = json.token;
           const userId = json.user_id.toString();
 
           // save token in secure storage
-          await EncryptedStorage.setItem('Token', userToken);
-          await EncryptedStorage.setItem('UserId', userId);
+          try {
+            await EncryptedStorage.setItem('AppToken', userToken);
+            await EncryptedStorage.setItem('UserId', userId);
+          } catch (error) {
+            console.log(error);
+          }
 
           updateReducerState({type: 'SIGN_IN', token: userToken});
         } else if (json.error) {
@@ -65,7 +75,7 @@ const App = () => {
       },
       signOut: async () => {
         try {
-          await EncryptedStorage.removeItem('Token');
+          await EncryptedStorage.removeItem('AppToken');
           await EncryptedStorage.removeItem('UserId');
         } catch (err) {
           console.debug(err);
@@ -84,7 +94,7 @@ const App = () => {
     const bootstrapAsync = async () => {
       let userToken: string | null = '';
       try {
-        userToken = await EncryptedStorage.getItem('Token');
+        userToken = await EncryptedStorage.getItem('AppToken');
       } catch (e) {
         console.log(e);
       }
@@ -92,10 +102,6 @@ const App = () => {
     };
     bootstrapAsync();
   }, []);
-
-  // if (!netInfo.isConnected && !state.isLoading) {
-  //   return <NoInternetConnection />;
-  // }
 
   if (state.isLoading) {
     return (
@@ -109,7 +115,7 @@ const App = () => {
 
   return (
     <AuthContext.Provider value={authContext}>
-      {state.userToken === null ? (
+      {state.userToken === null || state.userToken === undefined ? (
         <>
           <AuthStack></AuthStack>
         </>

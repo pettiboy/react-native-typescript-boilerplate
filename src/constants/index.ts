@@ -1,15 +1,14 @@
-import { ImageSourcePropType } from "react-native";
-import { IP } from "./env";
+import {ImageSourcePropType} from 'react-native';
 
+const IP = '127.0.0.1';
 export const URLS = {
   BASE_URL: `http://${IP}:8000/`,
   IMAGE_BASE_URL: `http://${IP}:8000/media/`,
   PRODUCT_IMAGE_BASE_URL: `http://${IP}:8000`,
-  WEBSITE_URL: 'https://chefcities.com/',
+  WEBSITE_URL: 'https://example.com/',
 };
 
 export const COLORS = {
-  // PRIMARY: '#cd7e0a',
   PRIMARY: 'rgb(205,126,10)',
   PRIMARY_DISABLED: '#e6be84',
   PRIMARY_2: 'rgba(205,126,10,0.3)',
@@ -35,26 +34,25 @@ export const COLORS = {
   VIOLET: 'rgb(149,125,173)',
 
   WHITE: '#fff',
-}
+};
 
 export const SHADOW = {
   MEDIUM: {
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 3,
     },
     shadowOpacity: 0.27,
-    shadowRadius: 4.65,        
+    shadowRadius: 4.65,
     elevation: 6,
   },
-}
-
+};
 
 interface IconsType<T> {
   [Key: string]: T;
 }
 export const ICONS: IconsType<ImageSourcePropType> = {
-  VEG: require('../assets/icons/veg-64.png'),
-  NON_VEG: require('../assets/icons/non-veg-64.png'),
-}
+  // VEG: require('../assets/icons/veg-64.png'),
+  // NON_VEG: require('../assets/icons/non-veg-64.png'),
+};

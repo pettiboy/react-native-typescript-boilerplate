@@ -9,21 +9,19 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-
-import {POST} from '../../api/fetch';
-import Text from '../../components/UI/Text/Text';
-import {COLORS, SHADOW, URLS} from '../../constants';
-import {AuthContext} from '../../context/Auth';
-import {AuthNavProps} from '../../navigation/types';
-
-import CheckBox from '../../components/UI/Checkbox/Checkbox';
-import ButtonSolid from '../../components/UI/Buttons/ButtonSolid';
-import ButtonOutline from '../../components/UI/Buttons/ButtonOutline';
 import {Fumi} from 'react-native-textinput-effects';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {POST} from '../../api/fetch';
+import ButtonOutline from '../../components/UI/Buttons/ButtonOutline';
+import ButtonSolid from '../../components/UI/Buttons/ButtonSolid';
+import CheckBox from '../../components/UI/Checkbox/Checkbox';
+import Text from '../../components/UI/Text/Text';
+import {COLORS, SHADOW, URLS} from '../../constants';
+import {AuthContext, AuthContextType} from '../../context/Auth';
+import {AuthNavProps} from '../../navigation/types';
 
-const Otp = ({navigation, route}: AuthNavProps<'Otp'>, {}) => {
-  const context = React.useContext(AuthContext);
+const OtpScreen = ({route}: AuthNavProps<'Otp'>) => {
+  const context = React.useContext(AuthContext) as AuthContextType;
 
   const otpInputRef = React.createRef<Fumi>();
   const nameInputRef = React.createRef<Fumi>();
@@ -85,7 +83,7 @@ const Otp = ({navigation, route}: AuthNavProps<'Otp'>, {}) => {
       setAllowLogin(false);
     }
   };
-  const nameChanged = (newName: string | undefined) => {
+  const NameChanged = (newName: string | undefined) => {
     setName(newName);
     if (allInputsValid(otp, newName)) {
       setAllowLogin(true);
@@ -106,7 +104,7 @@ const Otp = ({navigation, route}: AuthNavProps<'Otp'>, {}) => {
   const onPressResendOTP = async () => {
     setTimeLeft(120);
     setAllowResendOTP(false);
-    await POST('generate-otp', undefined, {phone: phone});
+    await POST('create-otp', undefined, {phone: phone});
   };
   const onPressLogin = async () => {
     if (context && otp) {
@@ -124,8 +122,8 @@ const Otp = ({navigation, route}: AuthNavProps<'Otp'>, {}) => {
 
   const incorrectOTPAlert = () =>
     Alert.alert(
-      'Whoops! Incorrect or Expired OTP ',
-      "Please try again by cling on 'Resend OTP'",
+      'Incorrect or Expired OTP ',
+      "Please try again by clicking on 'Resend OTP'",
       [
         {
           text: 'Retry',
@@ -141,10 +139,10 @@ const Otp = ({navigation, route}: AuthNavProps<'Otp'>, {}) => {
       {/* LOGO, NAME AND TEXT*/}
       <View style={{flex: 2, alignItems: 'center', justifyContent: 'center'}}>
         <Image
-          style={{aspectRatio: 1, maxHeight: 93, maxWidth: 93}}
-          source={require('../../assets/logos/gold-fill.png')}
+          style={{aspectRatio: 1, maxHeight: 100, maxWidth: 100}}
+          source={require('../../assets/logos/logo.png')}
         />
-        <Text style={{fontSize: 30, marginTop: 20}}>ChefCities</Text>
+        <Text style={{fontSize: 30, marginTop: 10}}>MyApp</Text>
         <Text style={{color: COLORS.SECONDARY}}>
           Secure 2-Factor Authentication
         </Text>
@@ -153,7 +151,7 @@ const Otp = ({navigation, route}: AuthNavProps<'Otp'>, {}) => {
       {/* INPUT FIELDS */}
       <View
         style={{justifyContent: 'space-evenly', flex: 2, marginHorizontal: 15}}>
-        <View style={{}}>
+        <View style={SHADOW.MEDIUM}>
           <Fumi
             ref={otpInputRef}
             returnKeyType={Platform.OS === 'ios' ? 'done' : 'next'}
@@ -188,19 +186,18 @@ const Otp = ({navigation, route}: AuthNavProps<'Otp'>, {}) => {
         </View>
 
         {isNewCustomer && (
-          <View style={{}}>
+          <View style={SHADOW.MEDIUM}>
             <Fumi
-              ref={otpInputRef}
+              ref={nameInputRef}
               onSubmitEditing={() => {
                 if (allInputsValid()) {
-                  console.debug('in here');
                   onPressLogin();
                 }
               }}
               label={'Full Name'}
               iconClass={MaterialIcons}
               iconName={'person'}
-              onChangeText={nameChanged}
+              onChangeText={NameChanged}
               value={name}
               maxLength={50}
               returnKeyType={'done'}
@@ -279,7 +276,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.WHITE,
-    // justifyContent: 'center',
   },
   text: {
     marginLeft: 5,
@@ -301,4 +297,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Otp;
+export default OtpScreen;

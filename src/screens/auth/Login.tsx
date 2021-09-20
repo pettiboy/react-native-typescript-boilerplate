@@ -9,49 +9,53 @@ import {
   Platform,
 } from 'react-native';
 
-import {POST} from '../../api/fetch';
-import ButtonSolid from '../../components/UI/Buttons/ButtonSolid';
-import FlatListSlider from '../../components/UI/Slider/FlatListSlider';
-import Text from '../../components/UI/Text/Text';
 import {COLORS, SHADOW, URLS} from '../../constants';
-import {AuthNavProps} from '../../navigation/types';
-import {Fumi} from 'react-native-textinput-effects';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
-const infoTextArray = [
-  'Order Homemade Food Online',
-  'Easy To Use App',
-  'Enjoy Super Fast Delivery',
-  'Get Amazing Offers',
-  'Easy Online Payments',
-];
+import SmsRetriever from 'react-native-sms-retriever';
+import Text from '../../components/UI/Text/Text';
+import {Fumi} from 'react-native-textinput-effects';
+import ButtonSolid from '../../components/UI/Buttons/ButtonSolid';
+import FlatListSlider from '../../components/UI/Slider/FlatListSlider';
+import {AuthNavProps} from '../../navigation/types';
+import ErrorModal from '../../components/UI/Modals/ErrorModal';
+
+const infoTextArray = ['Example Tag Line'];
 const infoTextArrayLength = infoTextArray.length;
 const IMAGES = [
   {image: require('../../assets/images/healthy-homemade-food.png')},
-  {image: require('../../assets/images/easy-to-use.png')},
-  {image: require('../../assets/images/fast-delivery.png')},
-  {image: require('../../assets/images/offers.png')},
-  {image: require('../../assets/images/pay-online.png')},
 ];
 
-const Login = ({navigation}: AuthNavProps<'Login'>, {}) => {
+const LoginScreen = ({navigation, route}: AuthNavProps<'Login'>) => {
   const phoneInputRef = React.createRef<Fumi>();
+  const autoscroll = false;
 
   const [phone, setPhone] = React.useState<string | undefined>();
   const [infoText, setInfoText] = React.useState<string>(infoTextArray[0]);
   const [enableButton, setEnableButton] = React.useState<boolean>(false);
+  const [modalVisible, setModalVisible] = React.useState(false);
+  const [buttonLoading, setButtonLoading] = React.useState(false);
+
+  async function getUserPhoneAndroid() {
+    try {
+      const phoneNumber = await SmsRetriever.requestPhoneNumber();
+      if (phoneNumber) {
+        let newPhoneNumber = phoneNumber.substring(3);
+        phoneChanged(newPhoneNumber);
+        onPressContinue(newPhoneNumber);
+      }
+    } catch (error) {}
+  }
+
+  React.useEffect(() => {
+    getUserPhoneAndroid();
+  }, []);
 
   const termsAndConditions = () => {
     Linking.openURL(URLS.WEBSITE_URL + 'terms-and-conditions');
   };
   const privacyPolicy = () => {
     Linking.openURL(URLS.WEBSITE_URL + 'privacy-policy');
-  };
-
-  const generateOTP = async () => {
-    console.log('requesting otp for', phone);
-    const json = await POST('generate-otp', undefined, {phone: phone});
-    return json.info ? false : true; // if new customer returns false
   };
 
   const checkInputValidity = (newPhone: string) => {
@@ -63,15 +67,32 @@ const Login = ({navigation}: AuthNavProps<'Login'>, {}) => {
     }
     return false;
   };
-  const onPressContinue = async () => {
-    if (phone && enableButton) {
-      const response = await generateOTP();
-      navigation.navigate('Otp', {
-        isNewCustomer: response,
-        phone: phone,
-      });
+
+  const onPressContinue = (newPhone?: string) => {
+    if (phone || newPhone) {
+      setButtonLoading(true);
+      const usePhone = phone ? phone : newPhone;
+      // POST('generate-otp', undefined, {phone: usePhone})
+      //   .then(json => {
+      const json = {success: true, info: true, error: null};
+      if (json.error) {
+        setModalVisible(true);
+      }
+      if (json.success) {
+        const isNewCustomer = json.info ? false : true;
+
+        navigation.navigate('Otp', {
+          isNewCustomer: isNewCustomer,
+          phone: usePhone as string,
+        });
+      }
+      // })
+      // .then(() => setButtonLoading(false))
+      // .catch(() => setButtonLoading(false));
+      setButtonLoading(false);
     }
   };
+
   const phoneChanged = (newPhone: string) => {
     setPhone(newPhone);
     if (checkInputValidity(newPhone)) {
@@ -84,19 +105,23 @@ const Login = ({navigation}: AuthNavProps<'Login'>, {}) => {
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#fff'}}>
       {/* Image Container and image */}
-      <View style={{flex: 0.6, alignItems: 'center', justifyContent: 'center'}}>
+      <View
+        style={{
+          flex: 0.6,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         <Image
-          style={{aspectRatio: 1, maxHeight: 93, maxWidth: 93}}
-          source={require('../../assets/logos/gold-fill.png')}
+          style={{aspectRatio: 1, maxHeight: 100, maxWidth: 100}}
+          source={require('../../assets/logos/logo.png')}
         />
       </View>
 
       {/* Container 'Welcome To ChefCities' and info text */}
       <View style={{flex: 0.5, alignItems: 'center'}}>
         <Text style={{fontSize: 30}}>
-          <Text style={{}}>ChefCities </Text>
-          <Text style={{color: COLORS.PRIMARY}}>Partner</Text>
-          {/* <Text> Welcome to </Text> */}
+          <Text> Welcome to </Text>
+          <Text style={{color: COLORS.PRIMARY}}>MyApp</Text>
         </Text>
 
         <Text style={{fontSize: 20, color: COLORS.SECONDARY}}>{infoText}</Text>
@@ -104,12 +129,16 @@ const Login = ({navigation}: AuthNavProps<'Login'>, {}) => {
 
       {/* container for input field */}
       <View style={{flex: 1, marginHorizontal: 15}}>
-        <View style={styles.shadow}>
+        <View style={SHADOW.MEDIUM}>
           <Fumi
             ref={phoneInputRef}
             returnKeyType={Platform.OS === 'ios' ? 'done' : 'next'}
             onSubmitEditing={() => {
-              onPressContinue();
+              if (checkInputValidity(phone as string)) {
+                onPressContinue();
+              } else {
+                phoneInputRef.current?.blur();
+              }
             }}
             label={'Phone Number'}
             iconClass={MaterialIcons}
@@ -142,9 +171,9 @@ const Login = ({navigation}: AuthNavProps<'Login'>, {}) => {
         </View>
         <ButtonSolid
           title={'Continue'}
-          style={{borderRadius: 5}}
-          disabled={!enableButton}
-          onPress={onPressContinue}
+          onPress={() => onPressContinue()}
+          buttonLoading={buttonLoading}
+          disabled={!enableButton || buttonLoading}
         />
       </View>
 
@@ -159,7 +188,7 @@ const Login = ({navigation}: AuthNavProps<'Login'>, {}) => {
           width={Math.round(Dimensions.get('window').width)}
           separator={0}
           loop={true}
-          autoscroll={false}
+          autoscroll={autoscroll}
           currentIndexCallback={(index: number) =>
             setInfoText(infoTextArray[index % infoTextArrayLength])
           }
@@ -177,10 +206,10 @@ const Login = ({navigation}: AuthNavProps<'Login'>, {}) => {
           flexDirection: 'row',
           marginBottom: 10,
         }}>
-        {/* <Image
+        <Image
           style={{height: 18, width: 18}}
           source={require('../../assets/icons/padlock.png')}
-        /> */}
+        />
         <Text>
           <Text onPress={termsAndConditions} style={styles.link}>
             {' '}
@@ -193,6 +222,15 @@ const Login = ({navigation}: AuthNavProps<'Login'>, {}) => {
           </Text>
         </Text>
       </View>
+
+      {modalVisible && (
+        <ErrorModal
+          modalVisible={modalVisible}
+          onPressClose={() => setModalVisible(false)}
+          modalContent={'OTP limit exhausted'}
+          primaryButtonText={'Ok'}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -205,16 +243,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  shadow: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.27,
-    shadowRadius: 4.65,
-    elevation: 6,
-  },
 });
 
-export default Login;
+export default LoginScreen;
